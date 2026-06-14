@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamu Herbal Alami - Official Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast success" style="display:none;"></div>
+
+<!-- WA FLOAT -->
+<a href="https://wa.me/6285187980564" class="wa-float" target="_blank" id="waFloatBtn">
+    <i class="fab fa-whatsapp"></i>
+</a>
+
+<!-- FOTO MODAL -->
+<div id="fotoModal" class="foto-modal" onclick="tutupFotoModal()">
+    <span style="position:absolute;top:20px;right:24px;color:white;font-size:32px;cursor:pointer;z-index:10">&times;</span>
+    <img id="fotoFullscreen" alt="Foto produk">
+</div>
+
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar">
+    <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2 text-white">
+                <div class="w-9 h-9 rounded-xl bg-white bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-leaf text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-base leading-tight" style="font-family:'Playfair Display',serif">Jamu Herbal</p>
+                    <p class="text-xs text-green-200 leading-none">Alami & Berkhasiat</p>
+                </div>
+            </a>
+
+            <div class="desktop-nav flex items-center gap-1">
+                <a href="#produk" class="nav-link">Produk</a>
+                <a href="#cara-order" class="nav-link">Cara Order</a>
+                <a href="#testimoni" class="nav-link">Testimoni</a>
+                <a href="#cek-pesanan" class="nav-link">Cek Pesanan</a>
+                <a href="#kontak" class="nav-link">Kontak</a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="totalTerjual" class="hidden md:flex items-center gap-1 bg-amber-400 text-amber-900 px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer hover:bg-amber-300 transition" onclick="loadProduk()">
+                    <i class="fas fa-fire-flame-curved"></i> 0 Terjual
+                </span>
+                <div id="navGuest" class="flex items-center gap-2">
+                    <button onclick="bukaAuthModal('login')" class="text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white border-opacity-30 hover:bg-white hover:bg-opacity-15 transition hidden md:flex items-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i> Masuk
+                    </button>
+                    <button onclick="bukaAuthModal('daftar')" class="bg-white text-green-700 text-sm font-bold px-4 py-2 rounded-xl hover:bg-green-50 transition hidden md:flex items-center gap-2">
+                        <i class="fas fa-user-plus"></i> Daftar
+                    </button>
+                </div>
+                <div id="navUser" class="relative" style="display:none">
+                    <div class="flex items-center gap-2 cursor-pointer" onclick="toggleDropdown()">
+                        <div id="navAvatar" class="avatar">U</div>
+                        <span id="navUserName" class="text-white text-sm font-semibold hidden md:block max-w-24 truncate"></span>
+                        <i class="fas fa-chevron-down text-white text-xs"></i>
+                    </div>
+                    <div id="userDropdown" class="user-dropdown">
+                        <div class="px-3 py-2 mb-1 border-b border-gray-100">
+                            <p class="font-bold text-sm text-gray-800" id="dropdownName">User</p>
+                            <p class="text-xs text-gray-400" id="dropdownEmail"></p>
+                        </div>
+                        <div class="dropdown-item" onclick="bukaRiwayatUser()">
+                            <i class="fas fa-box-archive text-green-500"></i> Riwayat Pesanan
+                        </div>
+                        <div class="dropdown-item" id="adminMenuLink" style="display:none" onclick="goToAdmin()">
+                            <i class="fas fa-shield-halved text-blue-500"></i> Admin Panel
+                        </div>
+                        <div class="dropdown-item danger" onclick="doLogout()">
+                            <i class="fas fa-sign-out-alt text-red-400"></i> Keluar
+                        </div>
+                    </div>
+                </div>
+                <button id="hamburger" class="hamburger text-white p-1">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobileMenu" class="mobile-menu mt-3 pt-3 border-t border-green-600">
+            <div class="flex flex-col gap-2">
+                <a href="#produk" class="nav-link">Produk</a>
+                <a href="#cara-order" class="nav-link">Cara Order</a>
+                <a href="#testimoni" class="nav-link">Testimoni</a>
+                <a href="#cek-pesanan" class="nav-link">Cek Pesanan</a>
+                <a href="#kontak" class="nav-link">Kontak</a>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="bukaAuthModal('login')" class="flex-1 text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white border-opacity-30 hover:bg-white hover:bg-opacity-15 transition text-center">Masuk</button>
+                    <button onclick="bukaAuthModal('daftar')" class="flex-1 bg-white text-green-700 text-sm font-bold px-4 py-2 rounded-xl hover:bg-green-50 transition text-center">Daftar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero py-20 relative">
+    <div class="hero-leaf"><i class="fas fa-leaf"></i></div>
+    <div class="container mx-auto px-4 text-center text-white relative z-10">
+        <div class="inline-flex items-center gap-2 bg-white bg-opacity-15 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-6 border border-white border-opacity-20">
+            <i class="fas fa-star text-amber-300"></i>
+            <span>Dipercaya ribuan pelanggan Indonesia</span>
+        </div>
+        <h1 class="text-5xl md:text-6xl font-bold mb-4" style="font-family:'Playfair Display',serif;line-height:1.15">
+            Herbal Alami<br><span class="text-amber-300">Untuk Kesehatan</span>
+        </h1>
+        <p class="text-xl text-green-100 mb-2">100% Alami · Tradisional · Berkhasiat</p>
+        <p class="text-sm text-green-200 mb-8">🌿 Langsung Chat WA &nbsp;•&nbsp; 💬 Konsultasi Gratis &nbsp;•&nbsp; 📦 Kirim Seluruh Indonesia</p>
+        <div class="flex flex-wrap gap-4 justify-center">
+            <a href="#produk" class="btn-primary text-base px-8 py-3.5">
+                <i class="fas fa-shopping-bag"></i> Lihat Produk
+            </a>
+            <a href="https://wa.me/6285187980564" target="_blank" class="btn-wa text-base px-8 py-3.5">
+                <i class="fab fa-whatsapp"></i> Chat Sekarang
+            </a>
+        </div>
+        <div class="flex justify-center gap-8 mt-12 text-center">
+            <div><p class="text-3xl font-bold" style="font-family:'Playfair Display',serif">500+</p><p class="text-green-200 text-sm">Pelanggan</p></div>
+            <div class="border-l border-white border-opacity-20"></div>
+            <div><p class="text-3xl font-bold" style="font-family:'Playfair Display',serif">100%</p><p class="text-green-200 text-sm">Herbal Alami</p></div>
+            <div class="border-l border-white border-opacity-20"></div>
+            <div><p class="text-3xl font-bold" id="heroRatingVal" style="font-family:'Playfair Display',serif">⭐4.9</p><p class="text-green-200 text-sm" id="heroUlasanCount">Rating</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== CARA ORDER ==================== -->
+<section id="cara-order" class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="section-title">
+            <h2>Cara Pemesanan</h2>
+            <p>Mudah, cepat, dan aman</p>
+            <div class="divider"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="step-card"><div class="step-number">1</div><i class="fas fa-shopping-cart text-3xl text-green-400 mb-3"></i><h3 class="text-lg font-bold mb-2">Pilih Produk</h3><p class="text-gray-500 text-sm">Pilih produk yang ingin dibeli dan klik "Beli Sekarang"</p></div>
+            <div class="step-card"><div class="step-number">2</div><i class="fas fa-clipboard-list text-3xl text-green-400 mb-3"></i><h3 class="text-lg font-bold mb-2">Isi Form</h3><p class="text-gray-500 text-sm">Lengkapi data nama, WhatsApp, dan alamat pengiriman</p></div>
+            <div class="step-card"><div class="step-number">3</div><i class="fas fa-money-bill-transfer text-3xl text-green-400 mb-3"></i><h3 class="text-lg font-bold mb-2">Transfer</h3><p class="text-gray-500 text-sm">Transfer ke rekening yang tertera dan kirim bukti via WA</p></div>
+            <div class="step-card"><div class="step-number">4</div><i class="fas fa-truck-fast text-3xl text-green-400 mb-3"></i><h3 class="text-lg font-bold mb-2">Terima Produk</h3><p class="text-gray-500 text-sm">Pesanan dikonfirmasi dan dikirim ke alamat Anda</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== PRODUK ==================== -->
+<section id="produk" class="py-16" style="background:var(--surface-alt)">
+    <div class="container mx-auto px-4">
+        <div class="section-title">
+            <h2>🌿 Produk Kami</h2>
+            <p>Herbal pilihan untuk kesehatan keluarga</p>
+            <div class="divider"></div>
+        </div>
+        <div id="produkList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="col-span-3 text-center py-16"><div class="spinner mx-auto mb-4"></div><p class="text-gray-400">Memuat produk...</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== TESTIMONI ==================== -->
+<section id="testimoni" class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="section-title">
+            <h2>⭐ Kata Mereka</h2>
+            <p>Testimoni nyata dari pelanggan setia kami</p>
+            <div class="divider"></div>
+        </div>
+        <div id="testimoniList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-3 text-center py-12"><div class="spinner mx-auto"></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== CEK PESANAN ==================== -->
+<section id="cek-pesanan" class="py-16" style="background:var(--surface-alt)">
+    <div class="container mx-auto px-4">
+        <div class="section-title">
+            <h2>🔍 Cek Status Pesanan</h2>
+            <p>Pantau pesananmu secara realtime</p>
+            <div class="divider"></div>
+        </div>
+        <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+            <div class="form-group">
+                <label class="input-label">ID Pesanan</label>
+                <div class="flex gap-2">
+                    <input type="text" id="cekId" class="input-field" placeholder="Contoh: HBJ-140625-001" onkeypress="if(event.key==='Enter')cekPesanan()">
+                    <button onclick="cekPesanan()" class="btn-primary whitespace-nowrap"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <div id="cekResult" style="display:none;margin-top:16px"></div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== KONTAK ==================== -->
+<section id="kontak" class="py-16 bg-white">
+    <div class="container mx-auto px-4 text-center">
+        <div class="section-title">
+            <h2>📞 Hubungi Kami</h2>
+            <p>Senin – Minggu, 07.00 – 22.00 WIB</p>
+            <div class="divider"></div>
+        </div>
+        <p class="text-4xl font-bold text-green-700 mb-6" id="nomorKontak" style="font-family:'Playfair Display',serif">0851-8798-0564</p>
+        <a href="https://wa.me/6285187980564" target="_blank" id="kontakWALink" class="btn-wa text-base px-10 py-4">
+            <i class="fab fa-whatsapp text-xl"></i> Chat WhatsApp Sekarang
+        </a>
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm text-gray-500">
+            <div class="flex items-center gap-2 justify-center"><i class="fas fa-shield-halved text-green-500"></i> Transaksi Aman</div>
+            <div class="flex items-center gap-2 justify-center"><i class="fas fa-truck text-green-500"></i> Kirim Seluruh Indonesia</div>
+            <div class="flex items-center gap-2 justify-center"><i class="fas fa-leaf text-green-500"></i> 100% Herbal Alami</div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="py-10">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div>
+                <h3 class="text-white font-bold text-xl mb-3" style="font-family:'Playfair Display',serif"><i class="fas fa-leaf mr-2"></i>Jamu Herbal Alami</h3>
+                <p class="text-sm leading-relaxed">Produk herbal tradisional pilihan untuk menjaga kesehatan keluarga Indonesia secara alami.</p>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-3">Menu Cepat</h4>
+                <div class="flex flex-col gap-2 text-sm">
+                    <a href="#produk" class="hover:text-white transition">🌿 Produk</a>
+                    <a href="#testimoni" class="hover:text-white transition">⭐ Testimoni</a>
+                    <a href="#cek-pesanan" class="hover:text-white transition">🔍 Cek Pesanan</a>
+                    <a href="#kontak" class="hover:text-white transition">📞 Kontak</a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-3">Akun</h4>
+                <div class="flex flex-col gap-2 text-sm">
+                    <a href="#" onclick="bukaAuthModal('login')" class="hover:text-white transition">🔐 Masuk</a>
+                    <a href="#" onclick="bukaAuthModal('daftar')" class="hover:text-white transition">✨ Daftar</a>
+                    <a href="admin.html" id="footerAdminLink" style="display:none" class="hover:text-white transition">⚙️ Admin Panel</a>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-green-700 pt-6 text-center text-sm">
+            <p>© 2024 Jamu Herbal Alami · Dibuat dengan ❤️ untuk kesehatan Indonesia</p>
+        </div>
+    </div>
+</footer>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- AUTH MODAL -->
+<div id="authModal" class="modal">
+    <div class="modal-box" style="max-width:440px;position:relative">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-leaf text-green-600 text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800" style="font-family:'Playfair Display',serif">Jamu Herbal Alami</h2>
+        </div>
+        <div class="flex gap-2 bg-gray-100 p-1 rounded-14px mb-6" style="border-radius:14px">
+            <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')"><i class="fas fa-sign-in-alt mr-1"></i> Masuk</div>
+            <div class="auth-tab" data-tab="daftar" onclick="switchAuthTab('daftar')"><i class="fas fa-user-plus mr-1"></i> Daftar</div>
+        </div>
+        <div id="panelLogin">
+            <div id="loginNotice" style="display:none" class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm text-amber-800 flex items-start gap-2"></div>
+            <form id="authLoginForm" onsubmit="doLogin(event)">
+                <div class="form-group">
+                    <label class="input-label">Email</label>
+                    <input type="email" id="loginEmail" class="input-field" placeholder="nama@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" id="loginPass" class="input-field" placeholder="••••••••" required>
+                </div>
+                <p class="error-text" id="loginError"></p>
+                <button type="submit" id="btnLogin" class="btn-primary w-full justify-center mb-3 mt-1"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+            </form>
+            <div class="text-center">
+                <button onclick="showForgot()" class="text-green-600 text-sm font-semibold hover:underline"><i class="fas fa-key mr-1"></i>Lupa password?</button>
+            </div>
+            <div class="divider-text">atau</div>
+            <button onclick="loginGoogle()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-200 rounded-xl py-3 font-semibold text-sm text-gray-700 hover:bg-gray-50 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Lanjutkan dengan Google
+            </button>
+        </div>
+        <div id="panelDaftar" style="display:none">
+            <form id="authRegisterForm" onsubmit="doRegister(event)">
+                <div class="form-group"><label class="input-label">Nama Lengkap</label><input type="text" id="regNama" class="input-field" placeholder="Nama lengkap Anda" required></div>
+                <div class="form-group"><label class="input-label">Email</label><input type="email" id="regEmail" class="input-field" placeholder="nama@email.com" required></div>
+                <div class="form-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" id="regPass" class="input-field" placeholder="Min. 6 karakter" oninput="checkStrength(this.value)" required>
+                    <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                    <p class="text-xs text-gray-400 mt-1" id="strengthText"></p>
+                </div>
+                <div class="form-group"><label class="input-label">Konfirmasi Password</label><input type="password" id="regPassConfirm" class="input-field" placeholder="Ulangi password" required></div>
+                <p class="error-text" id="regError"></p>
+                <button type="submit" id="btnRegister" class="btn-primary w-full justify-center mb-3 mt-1"><i class="fas fa-user-plus"></i> Daftar Sekarang</button>
+            </form>
+            <div class="divider-text">atau</div>
+            <button onclick="loginGoogle()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-200 rounded-xl py-3 font-semibold text-sm text-gray-700 hover:bg-gray-50 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Lanjutkan dengan Google
+            </button>
+        </div>
+        <div id="panelForgot" style="display:none">
+            <button onclick="backToLogin()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition"><i class="fas fa-arrow-left"></i> Kembali ke Login</button>
+            <div class="text-center mb-5">
+                <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3"><i class="fas fa-key text-blue-500 text-xl"></i></div>
+                <h3 class="font-bold text-xl text-gray-800">Reset Password</h3>
+                <p class="text-gray-500 text-sm mt-1">Masukkan email dan kami akan kirim link reset</p>
+            </div>
+            <form id="authForgotForm" onsubmit="doForgotPass(event)">
+                <div class="form-group"><label class="input-label">Email Terdaftar</label><input type="email" id="forgotEmail" class="input-field" placeholder="nama@email.com" required></div>
+                <p class="error-text" id="forgotError"></p>
+                <div id="forgotSuccess" style="display:none" class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-sm text-green-700"><i class="fas fa-check-circle mr-2"></i>Link reset password telah dikirim ke email Anda!</div>
+                <button type="submit" id="btnForgot" class="btn-primary w-full justify-center"><i class="fas fa-paper-plane"></i> Kirim Link Reset</button>
+            </form>
+        </div>
+        <button onclick="tutupAuthModal()" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:#6b7280;">&times;</button>
+    </div>
+</div>
+
+<!-- ORDER MODAL -->
+<div id="orderModal" class="modal">
+    <div class="modal-box">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-xl font-bold" style="font-family:'Playfair Display',serif">📋 Detail Pemesanan</h3>
+            <button onclick="tutupOrderModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">&times;</button>
+        </div>
+        <div id="orderProductInfo" class="mb-4 p-4 bg-green-50 rounded-xl border border-green-100"></div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-800">
+            <i class="fas fa-hourglass-half mr-1"></i> Pesanan akan hangus dalam <strong>10 menit</strong> jika tidak dikonfirmasi!
+        </div>
+        <form id="orderForm" onsubmit="submitOrder(event)">
+            <div class="form-group"><label class="input-label">Nama Lengkap <span class="text-red-500">*</span></label><input type="text" id="orderNama" required class="input-field" placeholder="Masukkan nama lengkap"></div>
+            <div class="form-group"><label class="input-label">Nomor WhatsApp <span class="text-red-500">*</span></label><input type="tel" id="orderWA" required class="input-field" placeholder="08123456789"></div>
+            <div class="form-group"><label class="input-label">Alamat Lengkap <span class="text-red-500">*</span></label><textarea id="orderAlamat" required rows="3" class="input-field" placeholder="Jl., RT/RW, Kelurahan, Kecamatan, Kota..."></textarea></div>
+            <div class="form-group"><label class="input-label">Jumlah</label><input type="number" id="orderQty" min="1" value="1" required class="input-field" oninput="hitungTotal()"></div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">Total Pembayaran:</span>
+                    <span id="orderTotal" class="text-2xl font-bold text-green-700">Rp 0</span>
+                </div>
+            </div>
+            <input type="hidden" id="orderProdukId">
+            <input type="hidden" id="orderProdukHarga">
+            <input type="hidden" id="orderProdukNama">
+            <div class="flex gap-3">
+                <button type="button" onclick="tutupOrderModal()" class="flex-1 btn-secondary justify-center">Batal</button>
+                <button type="submit" id="btnOrder" class="flex-1 btn-primary justify-center"><i class="fas fa-check-circle"></i> Konfirmasi Order</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="modal">
+    <div class="modal-box">
+        <div class="text-center mb-6">
+            <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-check-circle text-green-500 text-4xl"></i></div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-1" style="font-family:'Playfair Display',serif">Pesanan Berhasil!</h3>
+            <p class="text-gray-500">Simpan ID pesanan Anda untuk tracking</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 mb-5 flex justify-between items-center">
+            <div><p class="text-xs text-gray-400 mb-1">ID Pesanan</p><p id="successKode" class="font-mono font-bold text-lg text-gray-800"></p></div>
+            <button onclick="copyKode('successKode')" class="btn-secondary text-sm px-3 py-2"><i class="fas fa-copy mr-1"></i>Salin</button>
+        </div>
+        <div class="mb-5"><p class="text-sm text-gray-600 mb-2"><strong>Total:</strong> <span id="successTotal" class="text-green-700 font-bold text-lg"></span></p></div>
+        <div id="successRek" class="mb-5"></div>
+        <p class="text-sm text-gray-500 text-center mb-5">⏰ Konfirmasi transfer dalam <strong>10 menit</strong> via WhatsApp</p>
+        <div class="flex flex-col gap-3">
+            <button id="btnSuccessWA" class="btn-wa justify-center"><i class="fab fa-whatsapp"></i> Konfirmasi via WhatsApp</button>
+            <button onclick="document.getElementById('successModal').classList.remove('show')" class="btn-secondary justify-center">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- RIWAYAT PESANAN MODAL -->
+<div id="riwayatModal" class="modal">
+    <div class="modal-box modal-box-lg">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-xl font-bold" style="font-family:'Playfair Display',serif">📦 Riwayat Pesanan</h3>
+            <button onclick="document.getElementById('riwayatModal').classList.remove('show')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">&times;</button>
+        </div>
+        <div class="flex gap-2 mb-5 flex-wrap">
+            <button class="order-tab active" onclick="loadRiwayatUser('all');document.querySelectorAll('.order-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Semua</button>
+            <button class="order-tab" onclick="loadRiwayatUser('menunggu-pembayaran');document.querySelectorAll('.order-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">💰 Menunggu</button>
+            <button class="order-tab" onclick="loadRiwayatUser('proses');document.querySelectorAll('.order-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">⚙️ Proses</button>
+            <button class="order-tab" onclick="loadRiwayatUser('dikirim');document.querySelectorAll('.order-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">📦 Dikirim</button>
+            <button class="order-tab" onclick="loadRiwayatUser('selesai');document.querySelectorAll('.order-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">✅ Selesai</button>
+        </div>
+        <div id="riwayatList"></div>
+    </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div id="reviewModal" class="modal">
+    <div class="modal-box">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-xl font-bold" style="font-family:'Playfair Display',serif">⭐ Tulis Ulasan</h3>
+            <button onclick="document.getElementById('reviewModal').classList.remove('show')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">&times;</button>
+        </div>
+        <div class="bg-green-50 rounded-xl p-4 mb-5"><p class="font-semibold text-green-800" id="revProdukNama"></p><p class="text-sm text-green-600">Bagikan pengalaman Anda dengan produk ini</p></div>
+        <div class="form-group">
+            <label class="input-label text-center block mb-3">Rating</label>
+            <div class="flex justify-center gap-3">
+                <i class="rev-star fas fa-star text-3xl text-gray-200 cursor-pointer" data-r="1" onmouseover="renderStars(1)" onmouseout="renderStars(reviewRating)" onclick="reviewRating=1;renderStars(1)"></i>
+                <i class="rev-star fas fa-star text-3xl text-gray-200 cursor-pointer" data-r="2" onmouseover="renderStars(2)" onmouseout="renderStars(reviewRating)" onclick="reviewRating=2;renderStars(2)"></i>
+                <i class="rev-star fas fa-star text-3xl text-gray-200 cursor-pointer" data-r="3" onmouseover="renderStars(3)" onmouseout="renderStars(reviewRating)" onclick="reviewRating=3;renderStars(3)"></i>
+                <i class="rev-star fas fa-star text-3xl text-gray-200 cursor-pointer" data-r="4" onmouseover="renderStars(4)" onmouseout="renderStars(reviewRating)" onclick="reviewRating=4;renderStars(4)"></i>
+                <i class="rev-star fas fa-star text-3xl text-gray-200 cursor-pointer" data-r="5" onmouseover="renderStars(5)" onmouseout="renderStars(reviewRating)" onclick="reviewRating=5;renderStars(5)"></i>
+            </div>
+        </div>
+        <div class="form-group mt-4"><label class="input-label">Ulasan Anda</label><textarea id="revUlasan" rows="4" class="input-field" placeholder="Ceritakan pengalaman menggunakan produk ini..."></textarea></div>
+        <input type="hidden" id="revOrderId">
+        <input type="hidden" id="revProdukId">
+        <button onclick="submitReview()" class="btn-primary w-full justify-center mt-2"><i class="fas fa-paper-plane"></i> Kirim Ulasan</button>
+    </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+    auth.onAuthStateChanged(user => {
+        if(user) {
+            const el = document.getElementById('dropdownName');
+            const emailEl = document.getElementById('dropdownEmail');
+            if(el) el.textContent = user.displayName || user.email.split('@')[0];
+            if(emailEl) emailEl.textContent = user.email;
+        }
+    });
+</script>
+</body>
+</html>
