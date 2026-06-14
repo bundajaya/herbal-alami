@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel – Jamu Herbal Alami</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast success" style="display:none"></div>
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="loginScreen">
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-shield-halved text-green-600 text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800" style="font-family:'Playfair Display',serif">Admin Panel</h1>
+            <p class="text-gray-500 text-sm mt-1">Jamu Herbal Alami</p>
+        </div>
+        <div class="form-group">
+            <label class="label">Email Admin</label>
+            <input type="email" id="adminEmail" class="input" placeholder="admin@jamuherbal.com" onkeypress="if(event.key==='Enter')doAdminLogin()">
+        </div>
+        <div class="form-group">
+            <label class="label">Password</label>
+            <input type="password" id="adminPass" class="input" placeholder="••••••••" onkeypress="if(event.key==='Enter')doAdminLogin()">
+        </div>
+        <p class="text-red-500 text-sm mb-3" id="adminLoginError" style="display:none"></p>
+        <button onclick="doAdminLogin()" id="btnAdminLogin" class="btn btn-green w-full justify-center py-3 text-base">
+            <i class="fas fa-shield-halved"></i> Masuk ke Admin Panel
+        </button>
+        <div class="mt-4 text-center">
+            <a href="index.html" class="text-sm text-gray-400 hover:text-gray-600 transition">
+                <i class="fas fa-arrow-left mr-1"></i>Kembali ke Toko
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SIDEBAR ==================== -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white bg-opacity-20 flex items-center justify-center">
+                <i class="fas fa-leaf text-white text-lg"></i>
+            </div>
+            <div>
+                <p class="text-white font-bold text-sm" style="font-family:'Playfair Display',serif">Jamu Herbal</p>
+                <p class="text-green-300 text-xs">Admin Panel</p>
+            </div>
+        </div>
+    </div>
+    <div class="py-4">
+        <div class="nav-section">Menu Utama</div>
+        <a class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+            <span class="icon"><i class="fas fa-chart-line"></i></span> Dashboard
+        </a>
+        <a class="nav-item" data-page="pesanan" onclick="switchPage('pesanan')">
+            <span class="icon"><i class="fas fa-shopping-cart"></i></span> Pesanan
+            <span id="badgePesananBaru" class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden"></span>
+        </a>
+        <a class="nav-item" data-page="produk" onclick="switchPage('produk')">
+            <span class="icon"><i class="fas fa-box"></i></span> Produk
+        </a>
+        <a class="nav-item" data-page="testimoni" onclick="switchPage('testimoni')">
+            <span class="icon"><i class="fas fa-star"></i></span> Testimoni
+        </a>
+        <div class="nav-section">Sistem</div>
+        <a class="nav-item" data-page="konfirmasi" onclick="switchPage('konfirmasi')">
+            <span class="icon"><i class="fas fa-money-bill-wave"></i></span> Konfirmasi Bayar
+        </a>
+        <a class="nav-item" data-page="pengaturan" onclick="switchPage('pengaturan')">
+            <span class="icon"><i class="fas fa-gear"></i></span> Pengaturan
+        </a>
+        <div class="nav-section">Lainnya</div>
+        <a class="nav-item" href="index.html">
+            <span class="icon"><i class="fas fa-store"></i></span> Lihat Toko
+        </a>
+        <a class="nav-item" onclick="doAdminLogout()" style="cursor:pointer">
+            <span class="icon"><i class="fas fa-sign-out-alt"></i></span> Keluar
+        </a>
+    </div>
+</div>
+
+<!-- ==================== MAIN ==================== -->
+<div class="main">
+    <div class="topbar">
+        <div class="flex items-center gap-3">
+            <button class="md:hidden p-2 rounded-lg bg-gray-100" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <i class="fas fa-bars text-gray-600"></i>
+            </button>
+            <div>
+                <h1 class="font-bold text-gray-800" id="pageTitle">Dashboard</h1>
+                <p class="text-xs text-gray-400" id="pageSubtitle">Ringkasan aktivitas toko</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-400 hidden md:block" id="topbarTime"></span>
+            <div class="flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2">
+                <div class="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold" id="topbarAvatar">A</div>
+                <span class="text-sm font-semibold text-green-700" id="topbarName">Admin</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- ===== DASHBOARD ===== -->
+        <div class="page-panel active" id="pageDashboard">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+                <div class="stat-card"><div class="stat-icon bg-blue-50 text-blue-600"><i class="fas fa-box"></i></div><p class="text-2xl font-bold text-gray-800" id="statProduk">0</p><p class="text-sm text-gray-500">Total Produk</p></div>
+                <div class="stat-card"><div class="stat-icon bg-amber-50 text-amber-600"><i class="fas fa-shopping-bag"></i></div><p class="text-2xl font-bold text-gray-800" id="statPesanan">0</p><p class="text-sm text-gray-500">Total Pesanan</p></div>
+                <div class="stat-card"><div class="stat-icon bg-green-50 text-green-600"><i class="fas fa-money-bill-wave"></i></div><p class="text-2xl font-bold text-gray-800" id="statOmzet">Rp 0</p><p class="text-sm text-gray-500">Total Omzet</p></div>
+                <div class="stat-card"><div class="stat-icon bg-purple-50 text-purple-600"><i class="fas fa-star"></i></div><p class="text-2xl font-bold text-gray-800" id="statTestimoni">0</p><p class="text-sm text-gray-500">Testimoni</p></div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-800"><i class="fas fa-clock text-amber-500 mr-2"></i>Menunggu Konfirmasi</h3>
+                    <button onclick="switchPage('pesanan')" class="btn btn-outline btn-sm">Lihat Semua</button>
+                </div>
+                <div id="dashboardMenunggu"><div class="text-center py-8"><div class="spinner mx-auto"></div></div></div>
+            </div>
+            <div class="quick-confirm">
+                <h4 class="font-bold text-amber-800 mb-2"><i class="fas fa-bolt mr-2"></i>Konfirmasi Cepat</h4>
+                <p class="text-sm text-amber-700 mb-3">Masukkan ID pesanan untuk konfirmasi pembayaran instan</p>
+                <div class="flex gap-2">
+                    <input type="text" id="quickId" class="input flex-1" placeholder="ID Pesanan (HBJ-...)">
+                    <button onclick="bukaKonfirmasiDariId()" class="btn btn-green whitespace-nowrap"><i class="fas fa-check-circle"></i> Konfirmasi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PESANAN ===== -->
+        <div class="page-panel" id="pagePesanan">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <div class="search-box flex-1 min-w-48">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchPesanan" class="input" placeholder="Cari nama, ID pesanan..." oninput="filterPesanan()">
+                        </div>
+                        <select id="filterStatus" class="input w-auto" onchange="filterPesanan()">
+                            <option value="all">Semua Status</option>
+                            <option value="menunggu-pembayaran">💰 Menunggu</option>
+                            <option value="proses">⚙️ Diproses</option>
+                            <option value="dikirim">📦 Dikirim</option>
+                            <option value="selesai">✅ Selesai</option>
+                            <option value="ditolak">❌ Ditolak</option>
+                            <option value="kadaluarsa">⏰ Kadaluarsa</option>
+                        </select>
+                        <button onclick="exportCSV()" class="btn btn-outline"><i class="fas fa-download"></i> Export CSV</button>
+                        <button onclick="loadAllPesanan()" class="btn btn-outline"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table" id="pesananTable">
+                        <thead><tr><th>ID Pesanan</th><th>Nama</th><th>Produk</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+                        <tbody id="pesananBody"><tr><td colspan="7" class="text-center py-10 text-gray-400"><div class="spinner mx-auto mb-2"></div>Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PRODUK ===== -->
+        <div class="page-panel" id="pageProduk">
+            <div class="flex justify-between items-center mb-5">
+                <div></div>
+                <button onclick="bukaTambahProduk()" class="btn btn-green"><i class="fas fa-plus"></i> Tambah Produk</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="adminProdukList">
+                <div class="col-span-3 text-center py-10"><div class="spinner mx-auto"></div></div>
+            </div>
+        </div>
+
+        <!-- ===== TESTIMONI ===== -->
+        <div class="page-panel" id="pageTestimoni">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead><tr><th>Nama</th><th>Produk</th><th>Rating</th><th>Ulasan</th><th>Waktu</th><th>Aksi</th></tr></thead>
+                        <tbody id="testimoniBody"><tr><td colspan="6" class="text-center py-10"><div class="spinner mx-auto"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== KONFIRMASI BAYAR ===== -->
+        <div class="page-panel" id="pageKonfirmasi">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+                    <h3 class="font-bold text-gray-800 mb-4"><i class="fas fa-search text-green-500 mr-2"></i>Cari Pesanan untuk Dikonfirmasi</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="konfirmasiSearchId" class="input flex-1" placeholder="ID Pesanan (HBJ-...)">
+                        <button onclick="cariPesananUntukKonfirmasi()" class="btn btn-green"><i class="fas fa-search"></i> Cari</button>
+                    </div>
+                    <div id="konfirmasiInfo" style="display:none"></div>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4"><i class="fas fa-list text-amber-500 mr-2"></i>Pesanan Menunggu Konfirmasi</h3>
+                    <div id="konfirmasiList"><div class="text-center py-8"><div class="spinner mx-auto"></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PENGATURAN ===== -->
+        <div class="page-panel" id="pagePengaturan">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-5"><i class="fas fa-building-columns text-green-500 mr-2"></i>Rekening Pembayaran</h3>
+                    <div id="rekeningPreview" class="rek-card mb-5"></div>
+                    <div class="form-group"><label class="label">Nama Bank</label><input type="text" id="bankName" class="input" placeholder="BCA, BNI, BRI..."></div>
+                    <div class="form-group"><label class="label">Nomor Rekening</label><input type="text" id="bankNumber" class="input" placeholder="1234567890"></div>
+                    <div class="form-group"><label class="label">Nama Pemilik</label><input type="text" id="bankOwner" class="input" placeholder="Nama pemilik rekening"></div>
+                    <button onclick="simpanRekening()" class="btn btn-green w-full justify-center"><i class="fas fa-save"></i> Simpan Rekening</button>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-5"><i class="fab fa-whatsapp text-green-500 mr-2"></i>Nomor WhatsApp</h3>
+                    <div class="form-group"><label class="label">Nomor WA (format: 62xxx)</label><input type="text" id="waNumber" class="input" placeholder="6285187980564"></div>
+                    <button onclick="simpanWA()" class="btn btn-green w-full justify-center mb-5"><i class="fas fa-save"></i> Simpan Nomor WA</button>
+                    <hr class="border-gray-200 mb-5">
+                    <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-user-shield text-blue-500 mr-2"></i>Ubah Password Admin</h3>
+                    <div class="form-group"><label class="label">Password Baru</label><input type="password" id="newPassword" class="input" placeholder="Min. 6 karakter"></div>
+                    <div class="form-group"><label class="label">Konfirmasi Password</label><input type="password" id="confirmPassword" class="input" placeholder="Ulangi password"></div>
+                    <button onclick="ubahPassword()" class="btn btn-yellow w-full justify-center"><i class="fas fa-key"></i> Ubah Password</button>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-red-100 md:col-span-2">
+                    <h3 class="font-bold text-red-600 mb-3"><i class="fas fa-triangle-exclamation mr-2"></i>Zona Berbahaya</h3>
+                    <p class="text-sm text-gray-500 mb-4">Tindakan di bawah ini tidak dapat dibatalkan. Harap berhati-hati.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="hapusKadaluarsa()" class="btn btn-outline text-amber-700 border-amber-200"><i class="fas fa-broom"></i> Bersihkan Pesanan Kadaluarsa</button>
+                        <button onclick="confirmResetData()" class="btn btn-red"><i class="fas fa-trash-can"></i> Reset Semua Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div id="produkModal" class="modal">
+    <div class="modal-box">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-xl" id="produkModalTitle">Tambah Produk</h3>
+            <button onclick="tutupProdukModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">&times;</button>
+        </div>
+        <form onsubmit="simpanProduk(event)">
+            <div class="form-group"><label class="label">Nama Produk *</label><input type="text" id="pNama" class="input" required placeholder="Nama produk"></div>
+            <div class="form-group"><label class="label">Deskripsi</label><textarea id="pDeskripsi" rows="4" class="input" placeholder="Deskripsi produk..."></textarea></div>
+            <div class="form-group"><label class="label">Harga (kosongkan jika "Hubungi WA")</label><input type="number" id="pHarga" class="input" placeholder="Contoh: 35000" min="0"></div>
+            <div class="form-group"><label class="label">URL Foto (pisah koma untuk multi foto)</label><textarea id="pFoto" rows="2" class="input" placeholder="https://... atau https://..., https://..."></textarea></div>
+            <input type="hidden" id="pId">
+            <div class="flex gap-3 mt-2">
+                <button type="button" onclick="tutupProdukModal()" class="flex-1 btn btn-outline justify-center">Batal</button>
+                <button type="submit" class="flex-1 btn btn-green justify-center"><i class="fas fa-save"></i> Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="modal-box" style="max-width:580px">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-xl">Detail Pesanan</h3>
+            <button onclick="document.getElementById('detailModal').classList.remove('show')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">&times;</button>
+        </div>
+        <div id="detailContent"></div>
+    </div>
+</div>
+
+<div id="konfirmasiModal" class="modal">
+    <div class="modal-box">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-xl">💰 Konfirmasi Pembayaran</h3>
+            <button onclick="document.getElementById('konfirmasiModal').classList.remove('show')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">&times;</button>
+        </div>
+        <div id="konfModalInfo" class="bg-blue-50 rounded-xl p-4 mb-5 text-sm"></div>
+        <form onsubmit="prosesKonfirmasiPembayaran(event)">
+            <div class="form-group">
+                <label class="label">Bank Asal Transfer</label>
+                <select id="konfBank" class="input">
+                    <option value="">Pilih Bank</option>
+                    <option>BCA</option><option>BNI</option><option>BRI</option>
+                    <option>Mandiri</option><option>Dana</option><option>OVO</option><option>GoPay</option><option>Bank Lain</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="label">Nama Pengirim</label><input type="text" id="konfPengirim" class="input" placeholder="Nama sesuai rekening/akun" required></div>
+            <div class="form-group"><label class="label">Tanggal Transfer</label><input type="date" id="konfTanggal" class="input" required></div>
+            <div class="form-group"><label class="label">Jumlah Transfer (Rp)</label><input type="number" id="konfJumlah" class="input" readonly></div>
+            <input type="hidden" id="konfOrderId">
+            <div class="flex gap-3">
+                <button type="button" onclick="document.getElementById('konfirmasiModal').classList.remove('show')" class="flex-1 btn btn-outline justify-center">Batal</button>
+                <button type="submit" class="flex-1 btn btn-green justify-center"><i class="fas fa-check-circle"></i> Konfirmasi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="riwayatModal" class="modal">
+    <div class="modal-box">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-xl">📋 Riwayat Status</h3>
+            <button onclick="document.getElementById('riwayatModal').classList.remove('show')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">&times;</button>
+        </div>
+        <div id="riwayatContent"></div>
+    </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>
