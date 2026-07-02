@@ -411,6 +411,7 @@
     const CLOUDINARY_CLOUD = 'uorsiujb';
     const CLOUDINARY_PRESET = 'Herbal.Unsigned';
     let uploadedFotos = []; // array of URLs
+    let isUploadingFoto = false;
 
     async function uploadKeCloudinary(file) {
         const fd = new FormData();
@@ -427,6 +428,7 @@
 
     async function handleFotoUpload(files) {
         if (!files || files.length === 0) return;
+        isUploadingFoto = true;
         const area = document.getElementById('uploadAreaContent');
         const prog = document.getElementById('uploadProgress');
         const progText = document.getElementById('uploadProgressText');
@@ -447,6 +449,11 @@
         area.style.display = 'block';
         prog.style.display = 'none';
         document.getElementById('pFoto').value = uploadedFotos.join(',');
+        isUploadingFoto = false;
+
+        // Reset input file supaya bisa pilih file yang sama lagi kalau perlu
+        const inputEl = document.getElementById('fotoUploadInput');
+        if (inputEl) inputEl.value = '';
     }
 
     function renderFotoPreviews() {
@@ -506,6 +513,7 @@
          'pManfaat','pKomposisi','pKandungan','pCarapakai','pPenyimpanan','pPeringatan','pFoto']
             .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
         uploadedFotos = [];
+        isUploadingFoto = false;
         renderFotoPreviews();
     }
 
@@ -578,6 +586,9 @@
 
     function simpanProduk(e) {
         e.preventDefault();
+        if (isUploadingFoto) {
+            return showToast('â³ Tunggu upload foto selesai dulu', 'error');
+        }
         const id = document.getElementById('pId').value;
         const nama = document.getElementById('pNama').value.trim();
         if (!nama) return showToast('âŒ Nama produk wajib diisi', 'error');
@@ -597,10 +608,13 @@
             carapakai: document.getElementById('pCarapakai').value.trim(),
             penyimpanan: document.getElementById('pPenyimpanan').value.trim(),
             peringatan: document.getElementById('pPeringatan').value.trim(),
+            // Pakai null (bukan dihilangkan) supaya update() beneran menghapus
+            // nilai lama di Firebase kalau field dikosongkan admin
+            harga: (hargaStr && !isNaN(hargaStr)) ? parseInt(hargaStr) : null,
+            stok: (stokStr !== '') ? parseInt(stokStr) : null,
+            foto: null,
         };
 
-        if (hargaStr && !isNaN(hargaStr)) data.harga = parseInt(hargaStr);
-        if (stokStr !== '') data.stok = parseInt(stokStr);
         if (fotoStr) {
             const arr = fotoStr.split(',').map(u => u.trim()).filter(Boolean);
             data.foto = arr.length === 1 ? arr[0] : arr;
@@ -611,6 +625,9 @@
         btnSimpan.disabled = true;
         btnSimpan.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto"></div>';
 
+        // update() dengan value null akan menghapus key tsb di Firebase RTDB â€”
+        // jadi field yang dikosongkan admin (harga/stok/foto) beneran hilang,
+        // bukan tersisa nilai lama seperti sebelumnya.
         const ref = id ? db.ref('produk/' + id).update(data) : db.ref('produk').push(data);
         ref.then(() => {
             showToast('âœ… Produk ' + (id ? 'diperbarui' : 'ditambahkan'));
@@ -664,7 +681,26 @@
 
     function hapusTestimoni(id) {
         if(!confirm('Yakin hapus testimoni ini?')) return;
-        db.ref('testimoni/' + id).remove().then(() => { showToast('âœ… Testimoni dihapus'); loadAdminTestimoni(); });
+        db.ref('testimoni/' + id).once('value').then(snap => {
+            const t = snap.val();
+            return db.ref('testimoni/' + id).remove().then(() => {
+                showToast('âœ… Testimoni dihapus');
+                loadAdminTestimoni();
+                if (t && t.produkId) recalcProdukRating(t.produkId);
+            });
+        });
+    }
+
+    // Hitung ulang avgRating & ulasanCount produk dari semua testimoni yang terkait
+    function recalcProdukRating(produkId) {
+        if (!produkId) return;
+        db.ref('testimoni').orderByChild('produkId').equalTo(produkId).once('value').then(snap => {
+            const data = snap.val();
+            const list = data ? Object.values(data) : [];
+            const vals = list.map(t => Number(t.rating)).filter(r => r >= 1 && r <= 5);
+            const avg = vals.length ? parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)) : 0;
+            db.ref('produk/' + produkId).update({ avgRating: avg, ulasanCount: vals.length });
+        });
     }
 
     // ===== KONFIRMASI PEMBAYARAN =====
