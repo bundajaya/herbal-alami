@@ -193,7 +193,7 @@
 
         try {
             await auth.signInWithEmailAndPassword(email, pass);
-            showToast('✅ Selamat datang kembali!', 'success');
+            showToast('âœ… Selamat datang kembali!', 'success');
             tutupAuthModal();
             resumePendingOrder();
         } catch(err) {
@@ -237,7 +237,7 @@
                 createdAt: Date.now(),
                 role: 'user'
             });
-            showToast('🎉 Akun berhasil dibuat! Selamat datang, ' + nama, 'success');
+            showToast('ðŸŽ‰ Akun berhasil dibuat! Selamat datang, ' + nama, 'success');
             tutupAuthModal();
             resumePendingOrder();
         } catch(err) {
@@ -277,7 +277,7 @@
         try {
             await auth.sendPasswordResetEmail(email);
             document.getElementById('forgotSuccess').style.display = 'block';
-            showToast('📧 Email reset dikirim! Cek inbox Anda.', 'info');
+            showToast('ðŸ“§ Email reset dikirim! Cek inbox Anda.', 'info');
         } catch(err) {
             const msgs = {
                 'auth/user-not-found': 'Email tidak terdaftar',
@@ -290,7 +290,7 @@
         }
     }
 
-    // Go to admin — double check role before redirect
+    // Go to admin â€” double check role before redirect
     async function goToAdmin() {
         if (!currentUser) { bukaAuthModal('login'); return; }
         closeDropdown();
@@ -299,10 +299,10 @@
             if (snap.val() === 'admin') {
                 window.location.href = 'admin.html';
             } else {
-                showToast('⛔ Akses ditolak. Bukan admin.', 'error');
+                showToast('â›” Akses ditolak. Bukan admin.', 'error');
             }
         } catch(e) {
-            showToast('❌ Gagal verifikasi role', 'error');
+            showToast('âŒ Gagal verifikasi role', 'error');
         }
     }
 
@@ -310,10 +310,10 @@
     async function doLogout() {
         await auth.signOut();
         closeDropdown();
-        showToast('👋 Berhasil keluar', 'info');
+        showToast('ðŸ‘‹ Berhasil keluar', 'info');
     }
 
-    // GOOGLE LOGIN — works for both login and register panels
+    // GOOGLE LOGIN â€” works for both login and register panels
     async function loginGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('profile');
@@ -351,7 +351,7 @@
 
             const isNew = result.additionalUserInfo?.isNewUser;
             showToast(
-                isNew ? '🎉 Akun Google berhasil dibuat!' : '✅ Login Google berhasil!',
+                isNew ? 'ðŸŽ‰ Akun Google berhasil dibuat!' : 'âœ… Login Google berhasil!',
                 'success'
             );
             tutupAuthModal();
@@ -366,7 +366,7 @@
             };
             const msg = msgs[err.code];
             if (msg !== null) {
-                showToast('❌ ' + (msg || err.message), 'error');
+                showToast('âŒ ' + (msg || err.message), 'error');
             }
         } finally {
             document.querySelectorAll('[onclick="loginGoogle()"]').forEach(b => {
@@ -435,6 +435,7 @@
             const data = snap.val();
             if(!data) { c.innerHTML = `<div class="col-span-3 text-center py-16 text-gray-400"><i class="fas fa-seedling text-5xl mb-4 opacity-30"></i><p>Belum ada produk tersedia</p></div>`; return; }
 
+            window._produkCache = data;
             let html = '';
             let total = 0;
             Object.entries(data).forEach(([key, p]) => {
@@ -447,6 +448,7 @@
                 <div class="product-card fade-in-up">
                     ${generateFotoHTML(p.foto)}
                     ${p.terjual > 0 ? `<div class="badge-terjual"><i class="fas fa-fire-flame-curved mr-1"></i>${p.terjual} terjual</div>` : ''}
+                    ${p.kategori ? `<div class="badge-kategori">${p.kategori}</div>` : ''}
                     <div class="p-5">
                         <h3 class="font-bold text-lg text-gray-800 mb-2">${p.nama || 'Produk'}</h3>
                         <p class="text-gray-500 text-sm mb-3 leading-relaxed" style="white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${p.deskripsi || ''}</p>
@@ -454,13 +456,16 @@
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-2xl font-bold text-green-700">${harga ? formatRp(harga) : 'Hubungi WA'}</span>
                         </div>
-                        ${harga ?
-                            `<button onclick="bukaOrderModal('${key}','${(p.nama||'').replace(/'/g,"\\'")}',${harga})"
-                                class="btn-primary w-full justify-center group">
-                                <i class="fas fa-shopping-cart"></i>Beli Sekarang
-                            </button>` :
-                            `<button onclick="chatWA('${(p.nama||'').replace(/'/g,"\\'")}',null)" class="btn-wa w-full justify-center"><i class="fab fa-whatsapp"></i>Chat WA</button>`
-                        }
+                        <div class="flex gap-2">
+                            <button onclick="bukaDetailProduk('${key}')" class="btn-secondary px-4 justify-center"><i class="fas fa-circle-info"></i></button>
+                            ${harga ?
+                                `<button onclick="bukaOrderModal('${key}','${(p.nama||'').replace(/'/g,"\\'")}',${harga})"
+                                    class="btn-primary flex-1 justify-center group">
+                                    <i class="fas fa-shopping-cart"></i>Beli Sekarang
+                                </button>` :
+                                `<button onclick="chatWA('${(p.nama||'').replace(/'/g,"\\'")}',null)" class="btn-wa flex-1 justify-center"><i class="fab fa-whatsapp"></i>Chat WA</button>`
+                            }
+                        </div>
                     </div>
                 </div>`;
             });
@@ -495,7 +500,7 @@
             // Update hero rating
             const heroRatingEl = document.getElementById('heroRatingVal');
             const heroUlasanEl = document.getElementById('heroUlasanCount');
-            if(heroRatingEl) heroRatingEl.textContent = '⭐' + avgRating;
+            if(heroRatingEl) heroRatingEl.textContent = 'â­' + avgRating;
             if(heroUlasanEl) heroUlasanEl.textContent = totalUlasan + ' Ulasan';
 
             // Tampil 6 terbaru
@@ -519,13 +524,64 @@
     // ================= ORDER =================
     function chatWA(nama, harga) {
         const pesan = harga
-            ? `Halo kak, saya mau tanya produk *${nama}* harga Rp ${Number(harga).toLocaleString()}. Bisa info lebih lanjut? 🌿`
-            : `Halo kak, saya mau tanya tentang produk *${nama}*. Mohon info harga dan cara pemesanannya 🌿`;
+            ? `Halo kak, saya mau tanya produk *${nama}* harga Rp ${Number(harga).toLocaleString()}. Bisa info lebih lanjut? ðŸŒ¿`
+            : `Halo kak, saya mau tanya tentang produk *${nama}*. Mohon info harga dan cara pemesanannya ðŸŒ¿`;
         window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(pesan)}`, '_blank');
     }
 
     // Simpan pending order jika user belum login
     let pendingOrder = null;
+
+    function bukaDetailProduk(key) {
+        const p = (window._produkCache || {})[key];
+        if (!p) return;
+        const harga = p.harga && !isNaN(p.harga) ? Number(p.harga) : null;
+
+        const listify = (str) => str ? str.split(';').map(s=>s.trim()).filter(Boolean) : [];
+        const manfaatArr = listify(p.manfaat);
+        const komposisiArr = listify(p.komposisi);
+
+        document.getElementById('detailProdukFoto').innerHTML = generateFotoHTML(p.foto);
+        document.getElementById('detailProdukNama').textContent = p.nama || 'Produk';
+        document.getElementById('detailProdukKategori').textContent = p.kategori || '';
+        document.getElementById('detailProdukKategori').style.display = p.kategori ? 'inline-block' : 'none';
+        document.getElementById('detailProdukHarga').textContent = harga ? formatRp(harga) : 'Hubungi WA';
+        document.getElementById('detailProdukBerat').textContent = p.berat || '-';
+        document.getElementById('detailProdukDeskripsi').textContent = p.deskripsi || 'Tidak ada deskripsi';
+
+        const manfaatEl = document.getElementById('detailProdukManfaat');
+        manfaatEl.parentElement.style.display = manfaatArr.length ? 'block' : 'none';
+        manfaatEl.innerHTML = manfaatArr.map(m => `<li><i class="fas fa-check-circle text-green-500 mr-2"></i>${m}</li>`).join('');
+
+        const komposisiEl = document.getElementById('detailProdukKomposisi');
+        komposisiEl.parentElement.style.display = komposisiArr.length ? 'block' : 'none';
+        komposisiEl.innerHTML = komposisiArr.map(k => `<li><i class="fas fa-leaf text-green-500 mr-2"></i>${k}</li>`).join('');
+
+        const kandunganEl = document.getElementById('detailProdukKandungan');
+        kandunganEl.parentElement.style.display = p.kandungan ? 'block' : 'none';
+        kandunganEl.textContent = p.kandungan || '';
+
+        const carapakaiEl = document.getElementById('detailProdukCarapakai');
+        carapakaiEl.parentElement.style.display = p.carapakai ? 'block' : 'none';
+        carapakaiEl.textContent = p.carapakai || '';
+
+        const penyimpananEl = document.getElementById('detailProdukPenyimpanan');
+        penyimpananEl.parentElement.style.display = p.penyimpanan ? 'block' : 'none';
+        penyimpananEl.textContent = p.penyimpanan || '';
+
+        const peringatanEl = document.getElementById('detailProdukPeringatan');
+        peringatanEl.parentElement.style.display = p.peringatan ? 'block' : 'none';
+        peringatanEl.textContent = p.peringatan || '';
+
+        const btnAksi = document.getElementById('detailProdukAksi');
+        if (harga) {
+            btnAksi.innerHTML = `<button onclick="document.getElementById('detailProdukModal').classList.remove('show');bukaOrderModal('${key}','${(p.nama||'').replace(/'/g,"\\'")}',${harga})" class="btn-primary w-full justify-center"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>`;
+        } else {
+            btnAksi.innerHTML = `<button onclick="chatWA('${(p.nama||'').replace(/'/g,"\\'")}',null)" class="btn-wa w-full justify-center"><i class="fab fa-whatsapp"></i> Chat WA</button>`;
+        }
+
+        document.getElementById('detailProdukModal').classList.add('show');
+    }
 
     function bukaOrderModal(produkId, produkNama, produkHarga) {
         // Wajib login untuk beli
@@ -545,7 +601,7 @@
             return;
         }
 
-        // User sudah login — buka modal order
+        // User sudah login â€” buka modal order
         _bukaOrderModalInternal(produkId, produkNama, produkHarga);
     }
 
@@ -626,7 +682,7 @@
             tampilkanModalSukses(kode, total, rek, produkNama, nama);
 
         } catch(err) {
-            showToast('❌ Gagal membuat pesanan: ' + err.message, 'error');
+            showToast('âŒ Gagal membuat pesanan: ' + err.message, 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-check-circle"></i> Konfirmasi Order';
@@ -639,54 +695,54 @@
         document.getElementById('successRek').innerHTML = `
             <div class="rekening-card">
                 <p class="text-white text-opacity-80 text-sm mb-1">Transfer ke rekening</p>
-                <p class="text-2xl font-bold font-mono">${rek.bank} • ${rek.nomor}</p>
+                <p class="text-2xl font-bold font-mono">${rek.bank} â€¢ ${rek.nomor}</p>
                 <p class="text-sm mt-1">a.n. ${rek.nama}</p>
                 <p class="text-2xl font-bold mt-3">${formatRp(total)}</p>
             </div>`;
         document.getElementById('successModal').classList.add('show');
 
         // Auto WA
-        const pesanWA = `📋 *PESANAN BARU - ${kode}*\n\n` +
+        const pesanWA = `ðŸ“‹ *PESANAN BARU - ${kode}*\n\n` +
             `Halo kak, saya sudah order:\n` +
-            `• Produk: ${produk}\n• Total: ${formatRp(total)}\n\n` +
+            `â€¢ Produk: ${produk}\nâ€¢ Total: ${formatRp(total)}\n\n` +
             `Apakah sudah bisa saya transfer ke ${rek.bank} ${rek.nomor}?\n\n` +
-            `Terima kasih 🌿`;
+            `Terima kasih ðŸŒ¿`;
         document.getElementById('btnSuccessWA').onclick = () => window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(pesanWA)}`, '_blank');
     }
 
     function copyKode(id) {
         const el = document.getElementById(id);
-        navigator.clipboard.writeText(el.textContent).then(() => showToast('✅ ID disalin!', 'success'));
+        navigator.clipboard.writeText(el.textContent).then(() => showToast('âœ… ID disalin!', 'success'));
     }
 
     // ================= CEK PESANAN =================
 
-    // Sensor helper — sembunyikan sebagian karakter
+    // Sensor helper â€” sembunyikan sebagian karakter
     function sensorTeks(str, tampilAwal = 3, tampilAkhir = 2) {
         if (!str) return '***';
         str = String(str);
         if (str.length <= tampilAwal + tampilAkhir) {
-            return str.charAt(0) + '•'.repeat(str.length - 1);
+            return str.charAt(0) + 'â€¢'.repeat(str.length - 1);
         }
         const awal  = str.substring(0, tampilAwal);
         const akhir = str.substring(str.length - tampilAkhir);
-        const bintang = '•'.repeat(Math.min(str.length - tampilAwal - tampilAkhir, 6));
+        const bintang = 'â€¢'.repeat(Math.min(str.length - tampilAwal - tampilAkhir, 6));
         return awal + bintang + akhir;
     }
 
     function sensorWA(wa) {
-        // "628512345678" → "6285••••5678"
+        // "628512345678" â†’ "6285â€¢â€¢â€¢â€¢5678"
         if (!wa) return '***';
         const s = String(wa);
-        if (s.length < 8) return s.charAt(0) + '•'.repeat(s.length - 1);
-        return s.substring(0, 4) + '••••' + s.substring(s.length - 4);
+        if (s.length < 8) return s.charAt(0) + 'â€¢'.repeat(s.length - 1);
+        return s.substring(0, 4) + 'â€¢â€¢â€¢â€¢' + s.substring(s.length - 4);
     }
 
     function sensorAlamat(alamat) {
         if (!alamat) return '***';
         const str = String(alamat);
         const potong = Math.min(str.length, 12);
-        return str.substring(0, potong) + '•••••••';
+        return str.substring(0, potong) + 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢';
     }
 
     function cekPesanan() {
@@ -714,12 +770,12 @@
             const isPemilik = currentUser && order.userId && currentUser.uid === order.userId;
 
             const statusMap = {
-                'menunggu-pembayaran': { label: '💰 Menunggu Pembayaran', cls: 's-menunggu' },
-                'proses':              { label: '⚙️ Sedang Diproses',     cls: 's-proses'   },
-                'dikirim':             { label: '📦 Dalam Pengiriman',    cls: 's-dikirim'  },
-                'selesai':             { label: '✅ Pesanan Selesai',      cls: 's-selesai'  },
-                'ditolak':             { label: '❌ Ditolak',              cls: 's-ditolak'  },
-                'kadaluarsa':          { label: '⏰ Kadaluarsa',           cls: 's-kadaluarsa' }
+                'menunggu-pembayaran': { label: 'ðŸ’° Menunggu Pembayaran', cls: 's-menunggu' },
+                'proses':              { label: 'âš™ï¸ Sedang Diproses',     cls: 's-proses'   },
+                'dikirim':             { label: 'ðŸ“¦ Dalam Pengiriman',    cls: 's-dikirim'  },
+                'selesai':             { label: 'âœ… Pesanan Selesai',      cls: 's-selesai'  },
+                'ditolak':             { label: 'âŒ Ditolak',              cls: 's-ditolak'  },
+                'kadaluarsa':          { label: 'â° Kadaluarsa',           cls: 's-kadaluarsa' }
             };
             const s = statusMap[order.status] || statusMap['menunggu-pembayaran'];
 
@@ -753,7 +809,7 @@
             const tampilAlamat = isPemilik ? order.alamat : sensorAlamat(order.alamat);
             const tampilNama   = isPemilik ? order.nama   : sensorTeks(order.nama, 2, 1);
 
-            // Banner sensor — muncul kalau bukan pemilik
+            // Banner sensor â€” muncul kalau bukan pemilik
             const sensorBanner = !isPemilik ? `
                 <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 text-xs text-gray-500">
                     <i class="fas fa-shield-halved text-gray-400 text-base shrink-0"></i>
@@ -764,7 +820,7 @@
                     </span>
                 </div>` : '';
 
-            // Info pembayaran (rekening) — hanya tampil untuk pemilik & status menunggu
+            // Info pembayaran (rekening) â€” hanya tampil untuk pemilik & status menunggu
             let paymentHtml = '';
             if (isPemilik && order.status === 'menunggu-pembayaran') {
                 db.ref('pengaturan/rekening').once('value').then(rekSnap => {
@@ -774,7 +830,7 @@
                     if (payEl) payEl.innerHTML = `
                         <div class="rekening-card mt-3">
                             <p class="text-white text-opacity-80 text-xs mb-1">Transfer ke rekening</p>
-                            <p class="text-xl font-bold font-mono">${rek.bank} • ${rek.nomor}</p>
+                            <p class="text-xl font-bold font-mono">${rek.bank} â€¢ ${rek.nomor}</p>
                             <p class="text-sm mt-1">a.n. ${rek.nama}</p>
                             <p class="text-xl font-bold mt-2">${formatRp(order.total)}</p>
                         </div>`;
@@ -879,12 +935,12 @@
             if(filter !== 'all') orders = orders.filter(o => o.status === filter);
 
             const statusMap = {
-                'menunggu-pembayaran': { label: '💰 Menunggu Bayar', cls: 's-menunggu' },
-                'proses': { label: '⚙️ Diproses', cls: 's-proses' },
-                'dikirim': { label: '📦 Dikirim', cls: 's-dikirim' },
-                'selesai': { label: '✅ Selesai', cls: 's-selesai' },
-                'ditolak': { label: '❌ Ditolak', cls: 's-ditolak' },
-                'kadaluarsa': { label: '⏰ Kadaluarsa', cls: 's-kadaluarsa' }
+                'menunggu-pembayaran': { label: 'ðŸ’° Menunggu Bayar', cls: 's-menunggu' },
+                'proses': { label: 'âš™ï¸ Diproses', cls: 's-proses' },
+                'dikirim': { label: 'ðŸ“¦ Dikirim', cls: 's-dikirim' },
+                'selesai': { label: 'âœ… Selesai', cls: 's-selesai' },
+                'ditolak': { label: 'âŒ Ditolak', cls: 's-ditolak' },
+                'kadaluarsa': { label: 'â° Kadaluarsa', cls: 's-kadaluarsa' }
             };
 
             if(!orders.length) { c.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Tidak ada pesanan dengan filter ini</p></div>`; return; }
@@ -951,11 +1007,11 @@
             });
             await db.ref('pesanan/' + orderId).update({ dapatUlasan: true });
 
-            showToast('⭐ Terima kasih atas ulasannya!', 'success');
+            showToast('â­ Terima kasih atas ulasannya!', 'success');
             document.getElementById('reviewModal').classList.remove('show');
             loadTestimoni();
         } catch(err) {
-            showToast('❌ Gagal mengirim ulasan: ' + err.message, 'error');
+            showToast('âŒ Gagal mengirim ulasan: ' + err.message, 'error');
         }
     }
 
