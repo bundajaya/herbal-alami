@@ -95,6 +95,14 @@
             backdrop-filter: blur(4px);
         }
 
+        .badge-kategori {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(59,141,241,0.9);
+            color: white; font-size: 11px; font-weight: 700;
+            padding: 4px 10px; border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
+
         /* ---- BUTTONS ---- */
         .btn-primary {
             background: linear-gradient(135deg, #166534, #16a34a);
@@ -401,3 +409,4 @@
             background: linear-gradient(135deg, #166534, #16a34a);
             color: white;
         }
+
