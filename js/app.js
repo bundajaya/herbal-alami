@@ -505,7 +505,9 @@
 
             // Tampil 6 terbaru
             const list = all.reverse().slice(0, 6);
-            c.innerHTML = list.map(t => `
+            c.innerHTML = list.map(t => {
+                const fotoUlasan = Array.isArray(t.fotoUlasan) ? t.fotoUlasan : (t.fotoUlasan ? [t.fotoUlasan] : []);
+                return `
                 <div class="testimoni-card">
                     <div class="flex items-center mb-3">
                         <img src="${t.foto || 'https://ui-avatars.com/api/?name='+encodeURIComponent(t.nama||'U')+'&background=dcfce7&color=166534&bold=true'}"
@@ -516,8 +518,10 @@
                         </div>
                     </div>
                     <p class="text-gray-600 text-sm leading-relaxed mb-3">"${t.ulasan||''}"</p>
+                    ${fotoUlasan.length ? `<div class="flex gap-2 mb-3">${fotoUlasan.map(f => `<img src="${f}" onclick="bukaFotoModal('${f}')" class="w-14 h-14 rounded-lg object-cover cursor-pointer border border-gray-200">`).join('')}</div>` : ''}
                     <p class="text-xs text-gray-400"><i class="fas fa-tag mr-1 text-green-500"></i>${t.produk||'Jamu Herbal'}</p>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         });
     }
 
@@ -969,6 +973,9 @@
 
     // ================= REVIEW =================
     let reviewRating = 0;
+    let revUploadedFotos = [];
+    let revIsUploading = false;
+
     function bukaReviewModal(orderId, produkId, produkNama) {
         document.getElementById('revOrderId').value = orderId;
         document.getElementById('revProdukId').value = produkId;
@@ -976,6 +983,9 @@
         reviewRating = 0;
         renderStars(0);
         document.getElementById('revUlasan').value = '';
+        revUploadedFotos = [];
+        revIsUploading = false;
+        renderRevFotoPreviews();
         document.getElementById('reviewModal').classList.add('show');
         document.getElementById('riwayatModal').classList.remove('show');
     }
@@ -986,18 +996,84 @@
         });
     }
 
+    // ===== UPLOAD FOTO TESTIMONI (Cloudinary) =====
+    const REV_CLOUDINARY_CLOUD = 'uorsiujb';
+    const REV_CLOUDINARY_PRESET = 'Herbal.Unsigned';
+
+    async function uploadFotoTestimoni(file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', REV_CLOUDINARY_PRESET);
+        fd.append('folder', 'jamu-herbal/testimoni');
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${REV_CLOUDINARY_CLOUD}/image/upload`, {
+            method: 'POST', body: fd
+        });
+        if (!res.ok) throw new Error('Upload gagal');
+        const data = await res.json();
+        return data.secure_url;
+    }
+
+    async function handleRevFotoUpload(files) {
+        if (!files || files.length === 0) return;
+        if (revUploadedFotos.length >= 3) {
+            showToast('Maksimal 3 foto', 'error');
+            return;
+        }
+        revIsUploading = true;
+        const content = document.getElementById('revUploadContent');
+        const prog = document.getElementById('revUploadProgress');
+        content.style.display = 'none';
+        prog.style.display = 'block';
+
+        const sisaSlot = 3 - revUploadedFotos.length;
+        const filesToUpload = Array.from(files).slice(0, sisaSlot);
+
+        for (const file of filesToUpload) {
+            try {
+                const url = await uploadFotoTestimoni(file);
+                revUploadedFotos.push(url);
+                renderRevFotoPreviews();
+            } catch (e) {
+                showToast('âŒ Gagal upload foto', 'error');
+            }
+        }
+
+        content.style.display = 'block';
+        prog.style.display = 'none';
+        revIsUploading = false;
+
+        const inputEl = document.getElementById('revFotoInput');
+        if (inputEl) inputEl.value = '';
+    }
+
+    function renderRevFotoPreviews() {
+        const c = document.getElementById('revFotoPreviewList');
+        if (!c) return;
+        c.innerHTML = revUploadedFotos.map((url, i) => `
+            <div class="rev-foto-thumb">
+                <img src="${url}" alt="foto ${i+1}">
+                <button type="button" class="del-btn" onclick="hapusRevFotoPreview(${i})">Ã—</button>
+            </div>`).join('');
+    }
+
+    function hapusRevFotoPreview(i) {
+        revUploadedFotos.splice(i, 1);
+        renderRevFotoPreviews();
+    }
+
     async function submitReview() {
         if(!currentUser) { showToast('Login dahulu untuk memberikan ulasan!', 'error'); return; }
         if(!reviewRating) { showToast('Pilih rating dahulu!', 'error'); return; }
         const ulasan = document.getElementById('revUlasan').value.trim();
         if(!ulasan) { showToast('Tulis ulasan dahulu!', 'error'); return; }
+        if(revIsUploading) { showToast('â³ Tunggu upload foto selesai dulu', 'error'); return; }
 
         const orderId = document.getElementById('revOrderId').value;
         const produkId = document.getElementById('revProdukId').value;
         const produkNama = document.getElementById('revProdukNama').textContent;
 
         try {
-            await db.ref('testimoni').push({
+            const testiData = {
                 nama: currentUser.displayName || currentUser.email.split('@')[0],
                 email: currentUser.email,
                 foto: currentUser.photoURL || '',
@@ -1005,7 +1081,12 @@
                 ulasan, produk: produkNama,
                 produkId,
                 waktu: Date.now()
-            });
+            };
+            if (revUploadedFotos.length > 0) {
+                testiData.fotoUlasan = revUploadedFotos.length === 1 ? revUploadedFotos[0] : revUploadedFotos;
+            }
+
+            await db.ref('testimoni').push(testiData);
             await db.ref('pesanan/' + orderId).update({ dapatUlasan: true });
 
             // Hitung ulang avgRating & ulasanCount produk terkait
