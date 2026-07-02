@@ -1003,13 +1003,25 @@
                 foto: currentUser.photoURL || '',
                 rating: reviewRating,
                 ulasan, produk: produkNama,
+                produkId,
                 waktu: Date.now()
             });
             await db.ref('pesanan/' + orderId).update({ dapatUlasan: true });
 
+            // Hitung ulang avgRating & ulasanCount produk terkait
+            if (produkId) {
+                const snap = await db.ref('testimoni').orderByChild('produkId').equalTo(produkId).once('value');
+                const data = snap.val();
+                const list = data ? Object.values(data) : [];
+                const vals = list.map(t => Number(t.rating)).filter(r => r >= 1 && r <= 5);
+                const avg = vals.length ? parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)) : 0;
+                await db.ref('produk/' + produkId).update({ avgRating: avg, ulasanCount: vals.length });
+            }
+
             showToast('â­ Terima kasih atas ulasannya!', 'success');
             document.getElementById('reviewModal').classList.remove('show');
             loadTestimoni();
+            loadProduk();
         } catch(err) {
             showToast('âŒ Gagal mengirim ulasan: ' + err.message, 'error');
         }
