@@ -670,7 +670,7 @@
                     <td>
                         <div class="flex">${Array(5).fill(0).map((_,i) => `<i class="fa-${i<(t.rating||5)?'solid':'regular'} fa-star text-amber-400 text-xs"></i>`).join('')}</div>
                     </td>
-                    <td class="text-sm text-gray-600 max-w-xs truncate">${t.ulasan}</td>
+                    <td class="text-sm text-gray-600 max-w-xs truncate">${t.ulasan}${(Array.isArray(t.fotoUlasan)?t.fotoUlasan.length:(t.fotoUlasan?1:0)) > 0 ? ` <i class="fas fa-image text-green-500 ml-1" title="Ada foto ulasan"></i>` : ''}</td>
                     <td class="text-xs text-gray-400">${new Date(t.waktu).toLocaleDateString('id-ID')}</td>
                     <td>
                         <button onclick="hapusTestimoni('${t._id}')" class="btn btn-red btn-icon btn-sm"><i class="fas fa-trash"></i></button>
